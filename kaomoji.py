@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
+import os
 import zulip
 import requests
-import random
 
 
 class KaomojiBot():
@@ -12,14 +12,16 @@ class KaomojiBot():
     it then posts a caption and a randomly selected gif in response to
     zulip messages.
     '''
-    def __init__(self, zulip_username, zulip_api_key, commands, kaomojis,
-                 subscribed_streams=[]):
-        self.username = zulip_username
-        self.api_key = zulip_api_key
+    def __init__(self, zulip_usr, zulip_api, private_usr, private_api,
+                 commands, kaomojis, subscribed_streams=[]):
+        self.username = zulip_usr
+        self.api_key = zulip_api
+        self.private_username = private_usr
+        self.private_api_key = private_api
         self.commands = map(lambda x: x.lower(), commands)
         self.kaomojis = kaomojis
         self.subscribed_streams = subscribed_streams
-        self.client = zulip.Client(zulip_username, zulip_api_key)
+        self.client = zulip.Client(zulip_usr, zulip_api)
         self.subscriptions = self.subscribe_to_streams()
 
     '''
@@ -28,16 +30,12 @@ class KaomojiBot():
     @property
     def streams(self):
         if not self.subscribed_streams:
-            streams = [
-                {'name': stream['name']} for stream
-                in self.get_all_zulip_streams()
-            ]
+            streams = [{'name': stream['name']} for stream
+                       in self.get_all_zulip_streams()]
             return streams
         else:
-            streams = [
-                {'name': stream} for stream
-                in self.subscribed_streams
-            ]
+            streams = [{'name': stream} for stream
+                       in self.subscribed_streams]
             return streams
 
     '''
@@ -88,52 +86,28 @@ class KaomojiBot():
     Sends a message to zulip stream
     '''
     def send_message(self, msg, new_msg):
-        self.client.send_message({
-            "type": "stream",
-            "subject": msg["subject"],
-            "to": msg['display_recipient'],
-            "content": new_msg
-        })
+        self.edit_message(msg, new_msg)
+        # self.client.send_message({
+        #     "type": "stream",
+        #     "subject": msg["subject"],
+        #     "to": msg['display_recipient'],
+        #     "content": new_msg
+        # })
 
     '''
-    Returns a caption for the gif. This is either an empty string (no caption),
-    the single string provided, or a random pick from a list of provided captions
+    Replaces an old message with a new message.
     '''
-    def get_caption(self):
-        if not self.caption:
-            return ''
-        elif isinstance(self.caption, str):
-            return self.caption
-        else:
-            return random.choice(self.caption)
+    def edit_message(self, old, new):
+        payload = {'message_id': old['id'],
+                   'content': new}
+        url = "https://api.zulip.com/v1/messages"
+        requests.patch(url, data=payload,
+                       auth=requests.auth.HTTPBasicAuth(self.private_username,
+                                                        self.private_api_key))
 
     '''
-    Calls the giphy API and returns a gif url
-    '''
-    def get_giphy_response(self):
-        response = requests.get(
-            'http://api.giphy.com/v1/gifs/random',
-            params=self.get_params()
-        )
-        if response.status_code == 200:
-            return response.json()['data']['fixed_width_downsampled_url']
-        else:
-            raise RuntimeError(
-                ':( we failed to GET giphy.\n{}'.format(response.json())
-            )
-
-    '''
-    Parameters for giphy get requests
-    '''
-    def get_params(self):
-        params = {
-            'api_key': 'dc6zaTOxFJmzC',
-            'tag': self.search_string
-        }
-        return params
-
-    '''
-    Blocking call that runs forever. Calls self.respond() on every message received.
+    Blocking call that runs forever.
+    Calls self.respond() on every message received.
     '''
     def main(self):
         self.client.call_on_each_message(lambda msg: self.respond(msg))
@@ -143,16 +117,17 @@ class KaomojiBot():
 
     Create a zulip bot under "settings" on zulip.
     Zulip will give you a username and API key
-    keywords is the text in Zulip you would like the bot to respond to. This may be a
-        single word or a phrase.
+    keywords is the text in Zulip you would like the bot to respond to.
+    This may be a single word or a phrase.
     search_string is what you want the bot to search giphy for.
-    caption may be one of: [] OR 'a single string' OR ['or a list', 'of strings']
-    subscribed_streams is a list of the streams the bot should be active on. An empty
-        list defaults to ALL zulip streams
+    subscribed_streams is a list of the streams the bot should be active on.
+    An empty list defaults to ALL zulip streams
 '''
 
-zulip_username = '<your-bot-email>'
-zulip_api_key = '<your-api-key>'
+zulip_usr = os.environ['ZULIP_USR']
+zulip_api = os.environ['ZULIP_API']
+private_usr = os.environ['ZULIP_PRIVATE_USR']
+private_api = os.environ['ZULIP_PRIVATE_API']
 commands = [
     '/k',
     '/kaomoji'
@@ -163,5 +138,6 @@ kaomojis = {
 
 subscribed_streams = []
 
-new_bot = KaomojiBot(zulip_username, zulip_api_key, commands, kaomojis)
+new_bot = KaomojiBot(zulip_usr, zulip_api, private_usr, private_api,
+                     commands, kaomojis)
 new_bot.main()
