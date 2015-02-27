@@ -5,13 +5,6 @@ import requests
 
 
 class KaomojiBot():
-    '''
-    bot takes a zulip username and api key, a word or phrase to respond to,
-    a search string for giphy, an optional caption or list of captions,
-    and a list of the zulip streams it should be active in.
-    it then posts a caption and a randomly selected gif in response to
-    zulip messages.
-    '''
     def __init__(self, zulip_usr, zulip_api, private_usr, private_api,
                  commands, kaomojis, subscribed_streams=[]):
         self.username = zulip_usr
@@ -107,25 +100,23 @@ class KaomojiBot():
         self.client.call_on_each_message(lambda msg: self.respond(msg))
 
 
-''' The Customization Part!
-
-    Create a zulip bot under "settings" on zulip.
-    Zulip will give you a username and API key
-    keywords is the text in Zulip you would like the bot to respond to.
-    This may be a single word or a phrase.
-    search_string is what you want the bot to search giphy for.
-    subscribed_streams is a list of the streams the bot should be active on.
-    An empty list defaults to ALL zulip streams
 '''
-
+Zulip credentials:
+'''
 zulip_usr = os.environ['ZULIP_USR']
 zulip_api = os.environ['ZULIP_API']
 private_usr = os.environ['ZULIP_PRIVATE_USR']
 private_api = os.environ['ZULIP_PRIVATE_API']
+'''
+Recognised commands:
+'''
 commands = [
     '/k',
     '/kaomoji'
 ]
+'''
+Available kaomojis:
+'''
 kaomojis = {
     # Happy status:
     'yay': '＼(＾▽＾)／',
@@ -165,7 +156,6 @@ kaomojis = {
 }
 
 subscribed_streams = []
-
 new_bot = KaomojiBot(zulip_usr, zulip_api, private_usr, private_api,
                      commands, kaomojis)
 new_bot.main()

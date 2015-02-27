@@ -54,6 +54,8 @@ kaomojis = {
     sing:         (￣▽￣)/♫•*¨*•.¸¸♪
 }
 ```
+To use them, just write `/k <one-of-the-above-kaomojis-keyword>`.
+Example: `/k hi` will be replaced by `(￣▽￣)ノ`.
 
 ## Credits
 Thanks to (￣▽￣)ノ[@di0spyr0s](https://github.com/di0spyr0s) for the Python
