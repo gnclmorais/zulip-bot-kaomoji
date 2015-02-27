@@ -87,12 +87,6 @@ class KaomojiBot():
     '''
     def send_message(self, msg, new_msg):
         self.edit_message(msg, new_msg)
-        # self.client.send_message({
-        #     "type": "stream",
-        #     "subject": msg["subject"],
-        #     "to": msg['display_recipient'],
-        #     "content": new_msg
-        # })
 
     '''
     Replaces an old message with a new message.
@@ -133,7 +127,41 @@ commands = [
     '/kaomoji'
 ]
 kaomojis = {
-    'shrug': '¯\_(ツ)_/¯'
+    # Happy status:
+    'yay': '＼(＾▽＾)／',
+    'pleased': '(⌒‿⌒)',
+    'dance': '⌒(o＾▽＾o)ノ',
+    # Love status:
+    'inlove': '(─‿‿─)♡',
+    # Embarassed status:
+    'sorry': '(⌒_⌒;)',
+    # Dissatisfaction stauts:
+    'unamused': '(￣︿￣)',
+    'seriously': '(￢_￢;)',
+    # Angry status:
+    'thenerve': '(╬ Ò﹏Ó)',
+    'fliptable': '(╯°□°）╯︵ ┻━┻)',
+    'fliptable2': '(ﾉಥ益ಥ）ﾉ﻿ ┻━┻',
+    'fliptable3': '(ノಠ益ಠ)ノ彡┻━┻',
+    'fliptables': '┻━┻ ︵ヽ(`Д´)ﾉ︵﻿ ┻━┻',
+    # Serene status
+    'unfliptable': '┬─┬ノ( º _ ºノ)',
+    # Fear status:
+    'coldsweat': '(;;;*_*)',
+    'cantlook': '(/ω＼)',
+    # Indifference status:
+    'shrug': '¯\_(ツ)_/¯',
+    # Doubting status:
+    'doubt': '(￢_￢)',
+    # Surprise status:
+    'what': '(⊙_⊙)',
+    # Greetings:
+    'hi': '(￣▽￣)ノ',
+    'sup': '(・_・)ノ',
+    # Sleeping
+    'zzz': '(－_－) zzZ',
+    # Music
+    'sing': '(￣▽￣)/♫•*¨*•.¸¸♪'
 }
 
 subscribed_streams = []
