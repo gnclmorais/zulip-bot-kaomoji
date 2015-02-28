@@ -6,12 +6,12 @@ import requests
 
 class KaomojiBot():
     def __init__(self, zulip_usr, zulip_api, private_usr, private_api,
-                 commands, kaomojis, subscribed_streams=[]):
+                 command, kaomojis, subscribed_streams=[]):
         self.username = zulip_usr
         self.api_key = zulip_api
         self.private_username = private_usr
         self.private_api_key = private_api
-        self.commands = map(lambda x: x.lower(), commands)
+        self.command = command.lower()
         self.kaomojis = kaomojis
         self.subscribed_streams = subscribed_streams
         self.client = zulip.Client(zulip_usr, zulip_api)
@@ -57,23 +57,28 @@ class KaomojiBot():
     picks a caption, and calls send_message()
     '''
     def respond(self, msg):
-        # Proceed only if we have 1 command and at least 1 kaomoji keyword.
-        content = msg['content'].lower().strip().split(' ')
-        if len(content) < 2:
+        # Proceed only if we find an instance of the command and there is
+        # a following keywork (that hopefully corresponds to a kaomoji).
+        content = msg['content'].strip().encode('utf-8').split(' ')
+        index = content.index(self.command) if self.command in content else -1
+        if index == -1 or len(content) <= index + 1:
             return
 
-        # Remove the head (command) and leave the kaomojis on the list
-        command = content.pop(0)
+        # Start buidling the new message and
+        # get the list of possible keywords (words after command).
+        new_msg = content[0:index]
+        content = content[index + 1:]
 
         # If a valid command is found, search for the equivalent kaomoji
         # with each keyword provided. If matches are found, send the message.
-        if any(command in c for c in self.commands):
-            new_msg = []
-            for keyword in content:
-                if keyword in self.kaomojis:
-                    new_msg.append(kaomojis[keyword])
-            if len(new_msg):
-                self.send_message(msg, " ".join(new_msg))
+        for keyword in content:
+            lower = keyword = keyword.lower()
+            if lower in self.kaomojis:
+                new_msg.append(kaomojis[lower])
+            else:
+                new_msg.append(keyword)  # Not a keyword, so put it back
+        if len(new_msg):
+            self.send_message(msg, " ".join(new_msg))
 
     '''
     Sends a message to zulip stream
@@ -108,45 +113,44 @@ zulip_api = os.environ['ZULIP_API']
 private_usr = os.environ['ZULIP_PRIVATE_USR']
 private_api = os.environ['ZULIP_PRIVATE_API']
 '''
-Recognised commands:
+Recognised command:
 '''
-commands = [
-    '/k',
-    '/kaomoji'
-]
+command = '/k'
 '''
 Available kaomojis:
 '''
 kaomojis = {
-    # Happy status:
+    # Happy
     'yay': '＼(＾▽＾)／',
     'pleased': '(⌒‿⌒)',
     'dance': '⌒(o＾▽＾o)ノ',
-    # Love status:
+    # Love
     'inlove': '(─‿‿─)♡',
-    # Embarassed status:
+    # Embarassed
     'sorry': '(⌒_⌒;)',
-    # Dissatisfaction stauts:
+    # Dissatisfaction
     'unamused': '(￣︿￣)',
     'seriously': '(￢_￢;)',
-    # Angry status:
+    # Angry
     'thenerve': '(╬ Ò﹏Ó)',
     'fliptable': '(╯°□°）╯︵ ┻━┻)',
     'fliptable2': '(ﾉಥ益ಥ）ﾉ﻿ ┻━┻',
     'fliptable3': '(ノಠ益ಠ)ノ彡┻━┻',
     'fliptables': '┻━┻ ︵ヽ(`Д´)ﾉ︵﻿ ┻━┻',
-    # Serene status
+    # Serene
     'unfliptable': '┬─┬ノ( º _ ºノ)',
-    # Fear status:
+    # Sad
+    'sad': '(╯︵╰,)',
+    # Fear
     'coldsweat': '(;;;*_*)',
     'cantlook': '(/ω＼)',
-    # Indifference status:
+    # Indifference
     'shrug': '¯\_(ツ)_/¯',
-    # Doubting status:
+    # Doubting
     'doubt': '(￢_￢)',
-    # Surprise status:
+    # Surprise
     'what': '(⊙_⊙)',
-    # Greetings:
+    # Greetings
     'hi': '(￣▽￣)ノ',
     'sup': '(・_・)ノ',
     # Sleeping
@@ -157,5 +161,5 @@ kaomojis = {
 
 subscribed_streams = []
 new_bot = KaomojiBot(zulip_usr, zulip_api, private_usr, private_api,
-                     commands, kaomojis)
+                     command, kaomojis)
 new_bot.main()

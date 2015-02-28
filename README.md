@@ -43,6 +43,7 @@ kaomojis = {
     fliptable3:   (ノಠ益ಠ)ノ彡┻━┻,
     fliptables:   ┻━┻ ︵ヽ(`Д´)ﾉ︵﻿ ┻━┻,
     unfliptable:  ┬─┬ノ( º _ ºノ),
+    sad:          (╯︵╰,),
     coldsweat:    (;;;*_*),
     cantlook:     (/ω＼),
     shrug:        ¯\_(ツ)_/¯,
@@ -58,11 +59,7 @@ To use them, just write `/k <one-of-the-above-kaomojis-keyword>`.
 Example: `/k hi` will be replaced by `(￣▽￣)ノ`.
 
 ## TODO
-- [ ] Deploy the bot to Heroku.
-- [ ] Accept commands at the end of a phrase.
-- [ ] Add shortcuts (`/shrug` to `/k shrug`, for example).
-- [ ] Add a sad kaomoji.
-- [ ] Check if is possible to access to private groups.
+- Check if is possible to access to private groups.
 
 ## Credits
 Thanks to (￣▽￣)ノ[@di0spyr0s](https://github.com/di0spyr0s) for the Python
