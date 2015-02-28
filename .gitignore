@@ -58,3 +58,4 @@ venv/
 
 # Configuration
 config.sh
+config_heroku.sh
