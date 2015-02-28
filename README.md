@@ -1,5 +1,5 @@
 # zulip-bot-kaomoji
-Zulip bot to replace commands by kaomojis.
+Zulip bot to replace commands by kaomojis.  
 Simply put, replaces messages like `/shrug` with `¯\_(ツ)_/¯`, for example.
 
 ## Instalation
