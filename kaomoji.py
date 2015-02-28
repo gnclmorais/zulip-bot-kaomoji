@@ -115,7 +115,7 @@ private_api = os.environ['ZULIP_PRIVATE_API']
 '''
 Recognised command:
 '''
-command = '/k'
+command = '/kao'
 '''
 Available kaomojis:
 '''
