@@ -66,5 +66,8 @@ Example: `/k hi` will be replaced by `(￣▽￣)ノ`.
 
 ## Credits
 Thanks to (￣▽￣)ノ[@di0spyr0s](https://github.com/di0spyr0s) for the Python
-base code that allowed me to jump-start the development of this bot.
-Most of kaomoijs taken from [here](http://kaomoji.ru/en/).
+base code that allowed me to jump-start the development of this bot.  
+Shout-out to [@dariajung](https://twitter.com/djj2115) for finding out a way
+to [edit Zulip’s messages]
+(https://github.com/dariajung/zulip-gif-bot#notes-about-zulip-api). ⌒(o＾▽＾o)ノ  
+Most of kaomoijs taken from [here](http://kaomoji.ru/en/). ノ( ^ _ ^ノ)
