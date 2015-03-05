@@ -28,7 +28,7 @@ like `source config.sh`.
 
 
 ## Running
-`python kaomoji.py` ＼(＾▽＾)／
+`make run` ＼(＾▽＾)／
 
 
 ## Available kaomojis
@@ -59,8 +59,11 @@ kaomojis = {
     sing:         (￣▽￣)/♫•*¨*•.¸¸♪
 }
 ```
-To use them, just write `/k <one-of-the-above-kaomojis-keyword>`.
-Example: `/k hi` will be replaced by `(￣▽￣)ノ`.
+To use them, just write `@kao <one-of-the-above-kaomojis-keyword>`.
+Example: `@kao hi` will be replaced by `(￣▽￣)ノ`.  
+You can even have several kaomojis on a phrase, any place on it: 
+`I hope this @kao dance doesn’t break…` gets replaced to
+`I hope this ⌒(o＾▽＾o)ノ doesn’t break…`
 
 
 ## Credits
