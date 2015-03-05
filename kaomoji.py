@@ -1,17 +1,19 @@
 # -*- coding: utf-8 -*-
 import os
 import zulip
+import json
 import requests
 
 
 class KaomojiBot():
     def __init__(self, zulip_usr, zulip_api, private_usr, private_api,
-                 command, kaomojis, subscribed_streams=[]):
+                 command, help, kaomojis, subscribed_streams=[]):
         self.username = zulip_usr
         self.api_key = zulip_api
         self.private_username = private_usr
         self.private_api_key = private_api
         self.command = command.lower()
+        self.help = help.lower()
         self.kaomojis = kaomojis
         self.subscribed_streams = subscribed_streams
         self.client = zulip.Client(zulip_usr, zulip_api)
@@ -59,7 +61,14 @@ class KaomojiBot():
     def respond(self, msg):
         # Proceed only if we find an instance of the command and there is
         # a following keywork (that hopefully corresponds to a kaomoji).
-        content = msg['content'].strip().encode('utf-8').split(' ')
+        content = msg['content'].strip().encode('utf-8')
+
+        if content == self.help:
+            self.send_help(msg)
+            return
+
+        # Right, no help command, so check if other commands are found
+        content = content.split(' ')
         index = content.index(self.command) if self.command in content else -1
         if index == -1 or len(content) <= index + 1:
             return
@@ -81,10 +90,36 @@ class KaomojiBot():
             self.send_message(msg, " ".join(new_msg))
 
     '''
+    Sends available commands
+    '''
+    def send_help(self, msg):
+        self.edit_message(msg, "")  # Delete message
+
+        to = msg['sender_email']
+        text = """```
+Example usage: """ + command + """ <keyword>
+
+Available keywords & correspondent kaomojis:
+""" + json.dumps(self.kaomojis, indent=4, ensure_ascii=False) + """
+```"""
+
+        self.send_private_message(to, text)
+
+    '''
     Sends a message to zulip stream
     '''
     def send_message(self, msg, new_msg):
         self.edit_message(msg, new_msg)
+
+    '''
+    Sends a private message
+    '''
+    def send_private_message(self, to, msg):
+        self.client.send_message({
+            "type": "private",
+            "to": to,
+            "content": msg
+        })
 
     '''
     Replaces an old message with a new message.
@@ -115,7 +150,8 @@ private_api = os.environ['ZULIP_PRIVATE_API']
 '''
 Recognised command:
 '''
-command = '/kao'
+command = '@kao'
+help = command + " help"
 '''
 Available kaomojis:
 '''
@@ -161,5 +197,5 @@ kaomojis = {
 
 subscribed_streams = []
 new_bot = KaomojiBot(zulip_usr, zulip_api, private_usr, private_api,
-                     command, kaomojis)
+                     command, help, kaomojis)
 new_bot.main()

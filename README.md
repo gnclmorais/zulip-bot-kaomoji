@@ -1,6 +1,7 @@
 # zulip-bot-kaomoji
 Zulip bot to replace commands by kaomojis.  
-Simply put, replaces messages like `/shrug` with `¯\_(ツ)_/¯`, for example.
+Simply put, replaces messages like `@kao shrug` with `¯\_(ツ)_/¯`, for example.
+
 
 ## Instalation
 To work on this bot, follow the following instructions to setup you environment:
@@ -11,6 +12,7 @@ To work on this bot, follow the following instructions to setup you environment:
 1. `pip install -r requirements.txt`
 
 After you’re done working for the moment, don’t forget to `$ deactivate`.
+
 
 ## Configuration
 To run this bot, don’t forget to create a `config.sh` file with the following
@@ -24,8 +26,10 @@ export ZULIP_PRIVATE_API=<your-private-api-key>
 After having such a file, don’t forget to load these variables, something
 like `source config.sh`.
 
+
 ## Running
 `python kaomoji.py` ＼(＾▽＾)／
+
 
 ## Available kaomojis
 ```
@@ -58,8 +62,6 @@ kaomojis = {
 To use them, just write `/k <one-of-the-above-kaomojis-keyword>`.
 Example: `/k hi` will be replaced by `(￣▽￣)ノ`.
 
-## TODO
-- Check if is possible to access to private groups.
 
 ## Credits
 Thanks to (￣▽￣)ノ[@di0spyr0s](https://github.com/di0spyr0s) for the Python
