@@ -12,3 +12,9 @@ activate:
 
 deactivate:
 	heroku ps:scale worker=0
+
+von:
+	source venv/bin/activate
+
+voff:
+	deactivate
