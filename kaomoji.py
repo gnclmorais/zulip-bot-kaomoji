@@ -69,6 +69,10 @@ class KaomojiBot():
     def subscribe_to_streams(self):
         self.client.add_subscriptions(self.streams)
 
+    def __del__(self):
+        self.cur.close()
+        self.conn.close()
+
     '''
     Checks msg against keywords. If keywords is in msg, gets a gif url,
     picks a caption, and calls send_message()
@@ -220,7 +224,7 @@ Available keywords & correspondent kaomojis:
                    FROM {0}
                    WHERE email = %s;""".format(self.table)
         self._db_execute_query(query, (mail,))
-        return self.cur.fetchall()
+        return self.cur.fetchone()
 
     def db_insert(self, mail, key):
         query = """INSERT INTO {0} (email, api_key)
@@ -242,7 +246,9 @@ Available keywords & correspondent kaomojis:
         return self._db_execute_query(query, (mail,))
 
     def _db_execute_query(self, query, values):
-        return self.cur.execute(query, values)
+        result = self.cur.execute(query, values)
+        self.conn.commit()
+        return result
 
     '''
     Blocking call that runs forever.
