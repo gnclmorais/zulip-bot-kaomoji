@@ -7,8 +7,6 @@ import requests
 import psycopg2
 import urlparse
 
-import pprint
-
 
 class KaomojiBot():
     def __init__(self, zulip_usr, zulip_api, private_usr, private_api,
@@ -21,7 +19,9 @@ class KaomojiBot():
             'exit',
             'stop']
 
-        self.connect('postgres://hvctpbozzdoxdy:sI6zqEvx_MEENyRfikUcquZYQg@ec2-23-21-183-70.compute-1.amazonaws.com:5432/ddn7lbp8frv36f')
+        self.connect("""postgres://hvctpbozzdoxdy
+:sI6zqEvx_MEENyRfikUcquZYQg@ec2-23-21-183-70.compute-1.amazonaws.com
+:5432/ddn7lbp8frv36f""")
 
         self.username = zulip_usr
         self.api_key = zulip_api
@@ -113,40 +113,45 @@ class KaomojiBot():
             self.send_message(msg, " ".join(new_msg))
 
     def _handle_pm(self, msg):
-        address = msg['sender_email']
-        command = msg['content'].split(' ')
+        mail = msg['sender_email']
+        data = msg['content'].split(' ')
 
         # Just 2 arguments: cool
         # More than 2 args: too much info, warn the user
         # Less than 2 args: ¯\_(ツ)_/¯
-        if len(command) == 1:
-            command = str(command[0])
-            # if len(cmnd) == self.api_key_size and re.match('^\w+$', cmnd):
-            #     self._user_store(mail, cmnd)
-            # elif cmnd in self.remove_commands:
-            #     self._user_remove(mail)
-            # else:
-            #     self.send_private_message(mail,
-            #                               'Error! Please review your command.')
+        if len(data) == 1:
+            data = str(data[0])
+            if len(data) == self.api_key_size and re.match('^\w+$', data):
+                print(self.db_search(mail))
 
-            print('Printing:')
-            print(self.db_search(command))
+                if len(self.db_search(mail)):
+                    self._user_update(mail, data)
+                else:
+                    self._user_store(mail, data)
+            elif data in self.remove_commands:
+                self._user_remove(mail)
+            else:
+                self.send_private_message(mail,
+                                          'Error! Please review your command.')
         else:
             # TODO Send message to that e-mail asking for more info
-            self.send_private_message(address, 'Error! Way too many arguments…')
+            self.send_private_message(mail, 'Error! Way too many arguments…')
 
     '''
     Stores a pair (key, value),
     where the `key` is the user’s e-mail and `value` is the API key
     '''
     def _user_store(self, address, api_key):
-        ## TODO Check if this `address` already has something saved
-        self.db_insert(address, api_key)
+        print (self.db_insert(address, api_key))
         msg = 'Successfuly stored {0}'.format(api_key)
         self.send_private_message(address, msg)
 
+    def _user_update(self, address, api_key):
+        print (self.db_update(address, api_key))
+        msg = 'API key for {0} successfuly updated.'.format(address)
+        self.send_private_message(address, msg)
+
     def _user_remove(self, address):
-        ## TODO Check if this `address` already has something saved
         self.db_remove(address)
 
     '''
@@ -213,28 +218,31 @@ Available keywords & correspondent kaomojis:
     def db_search(self, mail):
         query = """SELECT email, api_key
                    FROM {0}
-                   WHERE email = \'{1}\';""".format(self.table, mail)
-        return self._db_execute_query(query)
+                   WHERE email = %s;""".format(self.table)
+        self._db_execute_query(query, (mail,))
+        return self.cur.fetchall()
 
     def db_insert(self, mail, key):
         query = """INSERT INTO {0} (email, api_key)
-                   VALUES (\'{1}\', \'{2}\')""".format(self.table, mail, key)
-        return self._db_execute_query(query)
+                   VALUES (%s, %s);""".format(self.table)
+        print(mail)
+        print(key)
+        print(query)
+        return self._db_execute_query(query, (mail, key))
 
     def db_update(self, mail, key):
         query = """UPDATE {0}
-                   SET api_key = \'{1}\'
-                   WHERE email = \'{2}\'""".format(self.table, key, mail)
-        return self._db_execute_query(query)
+                   SET api_key = %s
+                   WHERE email = %s;""".format(self.table)
+        return self._db_execute_query(query, (key, mail))
 
     def db_remove(self, mail):
         query = """DELETE FROM {0}
-                   WHERE email = \'{1}\'""".format(self.table, mail)
-        return self._db_execute_query(query)
+                   WHERE email = %s;""".format(self.table)
+        return self._db_execute_query(query, (mail,))
 
-    def _db_execute_query(self, query):
-        self.cur.execute(query)
-        return self.cur.fetchall()
+    def _db_execute_query(self, query, values):
+        return self.cur.execute(query, values)
 
     '''
     Blocking call that runs forever.
