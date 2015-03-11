@@ -83,9 +83,6 @@ Available keywords & correspondent kaomojis:
     '''
     db_api_key_size = 32
     db_table_name = 'keys'
-    db_url = ('postgres://hvctpbozzdoxdy:sI6zqEvx_MEENyRfikUcquZYQg@'
-              'ec2-23-21-183-70.compute-1.amazonaws.com:5432/'
-              'ddn7lbp8frv36f')
 
     def enum(**named_values):
         ''' Enum to define bot’s messages.
@@ -101,7 +98,7 @@ Available keywords & correspondent kaomojis:
         IDK='I have no idea what you mean. ¯\_(ツ)_/¯')
 
     def __init__(self, zulip_usr, zulip_api, private_usr, private_api,
-                 subscribed_streams=[]):
+                 database_url, subscribed_streams=[]):
         self.username = zulip_usr
         self.api_key = zulip_api
         self.private_username = private_usr
@@ -110,6 +107,7 @@ Available keywords & correspondent kaomojis:
         self.client = zulip.Client(zulip_usr, zulip_api)
         self.subscriptions = self.subscribe_to_streams()
 
+        self.db_url = database_url
         self._connect(self.db_url)
 
     def __del__(self):
@@ -247,10 +245,12 @@ Available keywords & correspondent kaomojis:
     where the `key` is the user’s e-mail and `value` is the API key
     '''
     def _user_store(self, address, api_key):
+        self.db_insert(address, api_key)
         msg = 'Successfuly stored {0}'.format(api_key)
         self.send_private_message(address, msg)
 
     def _user_update(self, address, api_key):
+        self.db_update(address, api_key)
         msg = 'API key for {0} successfuly updated.'.format(address)
         self.send_private_message(address, msg)
 
@@ -262,8 +262,8 @@ Available keywords & correspondent kaomojis:
         self.send_private_message(address, msg)
 
     def _user_remove(self, address):
-        msg = self.Messages.REMOVE_SUCCESS
         self.db_remove(address)
+        msg = self.Messages.REMOVE_SUCCESS
         self.send_private_message(address, msg)
 
     '''
@@ -293,12 +293,20 @@ Available keywords & correspondent kaomojis:
     Replaces an old message with a new message.
     '''
     def edit_message(self, old, new):
+        address = old['sender_email']
+        credentials = self.db_search(address)
+
+        if not credentials:
+            self.send_private_message(address, self.Messages.SETUP)
+            return
+
+        (address, api_key) = credentials
         payload = {'message_id': old['id'],
                    'content': new}
         url = "https://api.zulip.com/v1/messages"
-        requests.patch(url, data=payload,
-                       auth=requests.auth.HTTPBasicAuth(self.private_username,
-                                                        self.private_api_key))
+        requests.patch(url,
+                       data=payload,
+                       auth=requests.auth.HTTPBasicAuth(address, api_key))
 
     def db_search(self, mail):
         query = """SELECT email, api_key
@@ -346,5 +354,6 @@ private_api = os.environ['ZULIP_PRIVATE_API']
 database_url = os.environ['DATABASE_URL']
 
 subscribed_streams = []
-new_bot = KaomojiBot(zulip_usr, zulip_api, private_usr, private_api)
+new_bot = KaomojiBot(zulip_usr, zulip_api, private_usr, private_api,
+                     database_url)
 new_bot.main()
