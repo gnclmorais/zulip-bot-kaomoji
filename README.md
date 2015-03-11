@@ -27,6 +27,24 @@ After having such a file, don’t forget to load these variables, something
 like `source config.sh`.
 
 
+## Zulip configuration
+If you want to use the bot, you’ll have to send the bot your private API key.
+As explained by Zulip:
+> For most bots using the API, you'll want to give each bot its own name and 
+> API key using the above section. But if you want to write a bot that can access 
+> your own private messages, you should use your personal API key.
+
+So follow these steps:
+
+1. Open up Zulip and go to __Settings__
+1. Scroll until the bottom and click on the button __Show/change your API key__
+1. After inserting your password, copy that 32-character string
+1. Send a __private message__ to `kawaii-bot@students.hackerschool.com`  
+(it’s the e-mail address of the bot – its name is Kawaii, by the way)
+1. And that’s it! You should receive a message from the bot telling you your
+key was saved. You can now `@kao <kaomoji>` at will! (⌒ω⌒)
+
+
 ## Running
 `make run` ＼(＾▽＾)／
 
