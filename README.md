@@ -44,6 +44,11 @@ So follow these steps:
 1. And that’s it! You should receive a message from the bot telling you your
 key was saved. You can now `@kao <kaomoji>` at will! (⌒ω⌒)
 
+You can edit or remove your API key at any time. Just send it a private
+message with a new API key to update it, or a command like `delete`, `remove`,
+`exit` or `stop` to ask the bot to remove you from its database.
+Simple! 〜(￣▽￣〜)
+
 
 ## Running
 `make run` ＼(＾▽＾)／
