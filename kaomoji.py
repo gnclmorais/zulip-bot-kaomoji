@@ -6,33 +6,115 @@ import json
 import requests
 import psycopg2
 import urlparse
+import textwrap
 
 
 class KaomojiBot():
+    ''' Recognised command:
+    '''
+    command = '@kao'
+    help = command + ' help'
+
+    ''' Available kaomojis:
+    '''
+    kaomojis = {
+        # Happy
+        'yay': '＼(＾▽＾)／',
+        'pleased': '(⌒‿⌒)',
+        'dance': '⌒(o＾▽＾o)ノ',
+        # Love
+        'inlove': '(─‿‿─)♡',
+        # Embarassed
+        'sorry': '(⌒_⌒;)',
+        # Dissatisfaction
+        'unamused': '(￣︿￣)',
+        'seriously': '(￢_￢;)',
+        # Angry
+        'thenerve': '(╬ Ò﹏Ó)',
+        'fliptable': '(╯°□°）╯︵ ┻━┻)',
+        'fliptable2': '(ﾉಥ益ಥ）ﾉ﻿ ┻━┻',
+        'fliptable3': '(ノಠ益ಠ)ノ彡┻━┻',
+        'fliptables': '┻━┻ ︵ヽ(`Д´)ﾉ︵﻿ ┻━┻',
+        # Serene
+        'unfliptable': '┬─┬ノ( º _ ºノ)',
+        # Sad
+        'sad': '(╯︵╰,)',
+        # Fear
+        'coldsweat': '(;;;*_*)',
+        'cantlook': '(/ω＼)',
+        # Indifference
+        'shrug': '¯\_(ツ)_/¯',
+        # Doubting
+        'doubt': '(￢_￢)',
+        # Surprise
+        'what': '(⊙_⊙)',
+        # Greetings
+        'hi': '(￣▽￣)ノ',
+        'sup': '(・_・)ノ',
+        # Sleeping
+        'zzz': '(－_－) zzZ',
+        # Music
+        'sing': '(￣▽￣)/♫•*¨*•.¸¸♪'
+    }
+
+    ''' Private commands
+    '''
+    remove_commands = ['delete',
+                       'remove',
+                       'exit',
+                       'stop']
+    kaos = json.dumps(kaomojis, indent=4, ensure_ascii=False)
+    help_api = textwrap.dedent('''
+Set me up & manage your private API key:
+* Send me your API key so I can edit your comments and include \
+awesome kaomojis! (*^ω^)
+* Send me `info` to check if I have your API key or not. (^_~)
+* Send me one of the following commands to delete your information \
+from my database: `{0}` ┐(￣ヘ￣;)┌
+* Send me the text `help` to see this message. (⌒_⌒;)
+
+Example usage on a stream: `{1} <keyword>`
+Available keywords & correspondent kaomojis:
+```
+{2}
+```'''.format('`, `'.join(remove_commands), command, kaos))
+
+    ''' Database-related information
+    '''
+    db_api_key_size = 32
+    db_table_name = 'keys'
+    db_url = ('postgres://hvctpbozzdoxdy:sI6zqEvx_MEENyRfikUcquZYQg@'
+              'ec2-23-21-183-70.compute-1.amazonaws.com:5432/'
+              'ddn7lbp8frv36f')
+
+    def enum(**named_values):
+        ''' Enum to define bot’s messages.
+        '''
+        return type('Enum', (), named_values)
+    Messages = enum(
+        ADD_SUCCESS='red',
+        UPDATE_SUCCESS='green',
+        REMOVE_SUCCESS='Your API key was successfuly removed! ＼(≧▽≦)／',
+        INFO_FOUND='''I have your data! Send me one of the following commands to remote it:
+            `{0}` (◕‿◕)'''.format('`, `'.join(remove_commands)),
+        INFO_NOT_FOUND='I don’t have your data, so rest assure. (-‿‿-)',
+        IDK='I have no idea what you mean. ¯\_(ツ)_/¯')
+
     def __init__(self, zulip_usr, zulip_api, private_usr, private_api,
-                 command, help, kaomojis, subscribed_streams=[]):
-        self.api_key_size = 32
-        self.table = 'keys'
-        self.remove_commands = [
-            'delete',
-            'remove',
-            'exit',
-            'stop']
-
-        self.connect("""postgres://hvctpbozzdoxdy
-:sI6zqEvx_MEENyRfikUcquZYQg@ec2-23-21-183-70.compute-1.amazonaws.com
-:5432/ddn7lbp8frv36f""")
-
+                 subscribed_streams=[]):
         self.username = zulip_usr
         self.api_key = zulip_api
         self.private_username = private_usr
         self.private_api_key = private_api
-        self.command = command.lower()
-        self.help = help.lower()
-        self.kaomojis = kaomojis
         self.subscribed_streams = subscribed_streams
         self.client = zulip.Client(zulip_usr, zulip_api)
         self.subscriptions = self.subscribe_to_streams()
+
+        self._connect(self.db_url)
+
+    def __del__(self):
+        self.cur.close()
+        self.conn.close()
 
     '''
     Standardizes a list of streams in the form [{'name': stream}]
@@ -47,6 +129,24 @@ class KaomojiBot():
             streams = [{'name': stream} for stream
                        in self.subscribed_streams]
             return streams
+
+    '''
+    Connect to database
+    '''
+    def _connect(self, database_url):
+        urlparse.uses_netloc.append("postgres")
+        url = urlparse.urlparse(database_url)
+
+        try:
+            self.conn = psycopg2.connect(
+                database=url.path[1:],
+                user=url.username,
+                password=url.password,
+                host=url.hostname,
+                port=url.port)
+            self.cur = self.conn.cursor()
+        except:
+            print 'I am unable to connect to the database'
 
     '''
     Call Zulip API to get a list of all streams
@@ -69,16 +169,10 @@ class KaomojiBot():
     def subscribe_to_streams(self):
         self.client.add_subscriptions(self.streams)
 
-    def __del__(self):
-        self.cur.close()
-        self.conn.close()
-
     '''
-    Checks msg against keywords. If keywords is in msg, gets a gif url,
-    picks a caption, and calls send_message()
+    Respondes to messages sent to it
     '''
     def respond(self, msg):
-
         # Check if it’s a private message;
         # If so, it’s probably someont sending us an e-mail address and API key
         if msg['type'] == 'private':
@@ -110,11 +204,11 @@ class KaomojiBot():
         for keyword in content:
             lower = keyword = keyword.lower()
             if lower in self.kaomojis:
-                new_msg.append(kaomojis[lower])
+                new_msg.append(self.kaomojis[lower])
             else:
                 new_msg.append(keyword)  # Not a keyword, so put it back
         if len(new_msg):
-            self.send_message(msg, " ".join(new_msg))
+            self.send_message(msg, ' '.join(new_msg))
 
     def _handle_pm(self, msg):
         mail = msg['sender_email']
@@ -125,54 +219,59 @@ class KaomojiBot():
         # Less than 2 args: ¯\_(ツ)_/¯
         if len(data) == 1:
             data = str(data[0])
-            if len(data) == self.api_key_size and re.match('^\w+$', data):
-                print(self.db_search(mail))
-
-                if len(self.db_search(mail)):
+            if len(data) == self.db_api_key_size and re.match('^\w+$', data):
+                if self.db_search(mail):
                     self._user_update(mail, data)
                 else:
                     self._user_store(mail, data)
             elif data in self.remove_commands:
-                self._user_remove(mail)
+                if self.db_search(mail):
+                    self._user_remove(mail)
+                else:
+                    msg = self.Messages.INFO_NOT_FOUND
+                    self.send_private_message(mail, msg)
+            elif data == 'info':
+                self._user_enquiry(mail)
+            elif data == 'help':
+                self.send_private_message(mail, self.help_api)
             else:
-                self.send_private_message(mail,
-                                          'Error! Please review your command.')
+                self._show_help(mail)
         else:
-            # TODO Send message to that e-mail asking for more info
-            self.send_private_message(mail, 'Error! Way too many arguments…')
+            self._show_help(mail)
+
+    def _show_help(self, mail):
+        self.send_private_message(mail, self.Messages.IDK)
 
     '''
     Stores a pair (key, value),
     where the `key` is the user’s e-mail and `value` is the API key
     '''
     def _user_store(self, address, api_key):
-        print (self.db_insert(address, api_key))
         msg = 'Successfuly stored {0}'.format(api_key)
         self.send_private_message(address, msg)
 
     def _user_update(self, address, api_key):
-        print (self.db_update(address, api_key))
         msg = 'API key for {0} successfuly updated.'.format(address)
         self.send_private_message(address, msg)
 
+    def _user_enquiry(self, address):
+        if self.db_search(address):
+            msg = self.Messages.INFO_FOUND
+        else:
+            msg = self.Messages.INFO_NOT_FOUND
+        self.send_private_message(address, msg)
+
     def _user_remove(self, address):
+        msg = self.Messages.REMOVE_SUCCESS
         self.db_remove(address)
+        self.send_private_message(address, msg)
 
     '''
     Sends available commands
     '''
     def send_help(self, msg):
-        self.edit_message(msg, "")  # Delete message
-
         to = msg['sender_email']
-        text = """```
-Example usage: """ + command + """ <keyword>
-
-Available keywords & correspondent kaomojis:
-""" + json.dumps(self.kaomojis, indent=4, ensure_ascii=False) + """
-```"""
-
-        self.send_private_message(to, text)
+        self.send_private_message(to, self.help_api)
 
     '''
     Sends a message to zulip stream
@@ -201,48 +300,27 @@ Available keywords & correspondent kaomojis:
                        auth=requests.auth.HTTPBasicAuth(self.private_username,
                                                         self.private_api_key))
 
-    '''
-    Connect to database
-    '''
-    def connect(self, database_url):
-        urlparse.uses_netloc.append("postgres")
-        url = urlparse.urlparse(database_url)
-
-        try:
-            self.conn = psycopg2.connect(
-                database=url.path[1:],
-                user=url.username,
-                password=url.password,
-                host=url.hostname,
-                port=url.port)
-            self.cur = self.conn.cursor()
-        except:
-            print "I am unable to connect to the database"
-
     def db_search(self, mail):
         query = """SELECT email, api_key
                    FROM {0}
-                   WHERE email = %s;""".format(self.table)
+                   WHERE email = %s;""".format(self.db_table_name)
         self._db_execute_query(query, (mail,))
         return self.cur.fetchone()
 
     def db_insert(self, mail, key):
         query = """INSERT INTO {0} (email, api_key)
-                   VALUES (%s, %s);""".format(self.table)
-        print(mail)
-        print(key)
-        print(query)
+                   VALUES (%s, %s);""".format(self.db_table_name)
         return self._db_execute_query(query, (mail, key))
 
     def db_update(self, mail, key):
         query = """UPDATE {0}
                    SET api_key = %s
-                   WHERE email = %s;""".format(self.table)
+                   WHERE email = %s;""".format(self.db_table_name)
         return self._db_execute_query(query, (key, mail))
 
     def db_remove(self, mail):
         query = """DELETE FROM {0}
-                   WHERE email = %s;""".format(self.table)
+                   WHERE email = %s;""".format(self.db_table_name)
         return self._db_execute_query(query, (mail,))
 
     def _db_execute_query(self, query, values):
@@ -266,55 +344,7 @@ zulip_api = os.environ['ZULIP_API']
 private_usr = os.environ['ZULIP_PRIVATE_USR']
 private_api = os.environ['ZULIP_PRIVATE_API']
 database_url = os.environ['DATABASE_URL']
-'''
-Recognised command:
-'''
-command = '@kao'
-help = command + " help"
-'''
-Available kaomojis:
-'''
-kaomojis = {
-    # Happy
-    'yay': '＼(＾▽＾)／',
-    'pleased': '(⌒‿⌒)',
-    'dance': '⌒(o＾▽＾o)ノ',
-    # Love
-    'inlove': '(─‿‿─)♡',
-    # Embarassed
-    'sorry': '(⌒_⌒;)',
-    # Dissatisfaction
-    'unamused': '(￣︿￣)',
-    'seriously': '(￢_￢;)',
-    # Angry
-    'thenerve': '(╬ Ò﹏Ó)',
-    'fliptable': '(╯°□°）╯︵ ┻━┻)',
-    'fliptable2': '(ﾉಥ益ಥ）ﾉ﻿ ┻━┻',
-    'fliptable3': '(ノಠ益ಠ)ノ彡┻━┻',
-    'fliptables': '┻━┻ ︵ヽ(`Д´)ﾉ︵﻿ ┻━┻',
-    # Serene
-    'unfliptable': '┬─┬ノ( º _ ºノ)',
-    # Sad
-    'sad': '(╯︵╰,)',
-    # Fear
-    'coldsweat': '(;;;*_*)',
-    'cantlook': '(/ω＼)',
-    # Indifference
-    'shrug': '¯\_(ツ)_/¯',
-    # Doubting
-    'doubt': '(￢_￢)',
-    # Surprise
-    'what': '(⊙_⊙)',
-    # Greetings
-    'hi': '(￣▽￣)ノ',
-    'sup': '(・_・)ノ',
-    # Sleeping
-    'zzz': '(－_－) zzZ',
-    # Music
-    'sing': '(￣▽￣)/♫•*¨*•.¸¸♪'
-}
 
 subscribed_streams = []
-new_bot = KaomojiBot(zulip_usr, zulip_api, private_usr, private_api,
-                     command, help, kaomojis)
+new_bot = KaomojiBot(zulip_usr, zulip_api, private_usr, private_api)
 new_bot.main()
