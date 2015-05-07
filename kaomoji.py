@@ -82,8 +82,7 @@ class KaomojiBot():
     db_table_name = 'keys'
 
     def enum(**named_values):
-        ''' Enum to define bot’s messages.
-        '''
+        '''Enum to define bot’s messages.'''
         return type('Enum', (), named_values)
     Messages = enum(
         ADD_SUCCESS='red',
@@ -91,7 +90,7 @@ class KaomojiBot():
         REMOVE_SUCCESS='Your API key was successfuly removed! ＼(≧▽≦)／',
         INFO_FOUND='''I have your data! Send me one of the following commands to remote it:
             `{0}` (◕‿◕)'''.format('`, `'.join(remove_commands)),
-        INFO_NOT_FOUND='I don’t have your data, so rest assure. (-‿‿-)',
+        INFO_NOT_FOUND='I don’t have your data, so rest assured. (-‿‿-)',
         IDK='I have no idea what you mean. ¯\_(ツ)_/¯')
 
     def __init__(self, zulip_usr, zulip_api, private_usr, private_api,
@@ -157,9 +156,9 @@ class KaomojiBot():
         self.client.add_subscriptions(self.streams)
 
     def respond(self, msg):
-        "Respondes to messages sent to it"
+        "Responds to messages sent to it"
         # Check if it’s a private message;
-        # If so, it’s probably someont sending us an e-mail address and API key
+        # If so, it’s probably someone sending us an e-mail address and API key
         if msg['type'] == 'private':
             self._handle_pm(msg)
             return
@@ -179,7 +178,7 @@ class KaomojiBot():
         if index == -1 or len(content) <= index + 1:
             return
 
-        # Start buidling the new message and
+        # Start building the new message and
         # get the list of possible keywords (words after command).
         new_msg = content[0:index]
         content = content[index + 1:]
