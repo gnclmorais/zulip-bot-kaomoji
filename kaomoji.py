@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
+import json
 import os
 import re
-import zulip
-import json
-import requests
-import psycopg2
-import urlparse
 import textwrap
+import urlparse
+
+import psycopg2
+import requests
+import zulip
 
 
 class KaomojiBot():
