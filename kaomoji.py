@@ -319,7 +319,7 @@ class KaomojiBot():
 
         Calls self.respond() on every message received.
         '''
-        self.client.call_on_each_message(lambda msg: self.respond(msg))
+        self.client.call_on_each_message(self.respond)
 
 
 if __name__ == "__main__":
