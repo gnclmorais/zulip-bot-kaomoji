@@ -323,14 +323,14 @@ Available keywords & correspondent kaomojis:
         self.client.call_on_each_message(lambda msg: self.respond(msg))
 
 
-# Zulip credentials:
-zulip_usr = os.environ['ZULIP_USR']
-zulip_api = os.environ['ZULIP_API']
-private_usr = os.environ['ZULIP_PRIVATE_USR']
-private_api = os.environ['ZULIP_PRIVATE_API']
-database_url = os.environ['DATABASE_URL']
+if __name__ == "__main__":
+    zulip_usr = os.environ['ZULIP_USR']
+    zulip_api = os.environ['ZULIP_API']
+    private_usr = os.environ['ZULIP_PRIVATE_USR']
+    private_api = os.environ['ZULIP_PRIVATE_API']
+    database_url = os.environ['DATABASE_URL']
 
-subscribed_streams = []
-new_bot = KaomojiBot(zulip_usr, zulip_api, private_usr, private_api,
-                     database_url)
-new_bot.main()
+    subscribed_streams = []
+    new_bot = KaomojiBot(zulip_usr, zulip_api, private_usr, private_api,
+                         database_url)
+    new_bot.main()
