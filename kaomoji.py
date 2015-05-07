@@ -63,19 +63,19 @@ class KaomojiBot():
                        'stop']
     kaos = json.dumps(kaomojis, indent=4, ensure_ascii=False)
     help_api = textwrap.dedent('''
-Set me up & manage your private API key:
-* Send me your API key so I can edit your comments and include \
-awesome kaomojis! (*^ω^)
-* Send me `info` to check if I have your API key or not. (^_~)
-* Send me one of the following commands to delete your information \
-from my database: `{0}` ┐(￣ヘ￣;)┌
-* Send me the text `help` to see this message. (⌒_⌒;)
+        Set me up & manage your private API key:
+        * Send me your API key so I can edit your comments and include \
+        awesome kaomojis! (*^ω^)
+        * Send me `info` to check if I have your API key or not. (^_~)
+        * Send me one of the following commands to delete your information \
+        from my database: `{0}` ┐(￣ヘ￣;)┌
+        * Send me the text `help` to see this message. (⌒_⌒;)
 
-Example usage on a stream: `{1} <keyword>`
-Available keywords & correspondent kaomojis:
-```
-{2}
-```'''.format('`, `'.join(remove_commands), command, kaos))
+        Example usage on a stream: `{1} <keyword>`
+        Available keywords & correspondent kaomojis:
+        ```
+        {2}
+        ```''').format('`, `'.join(remove_commands), command, kaos)
 
     # Database-related information
     db_api_key_size = 32
