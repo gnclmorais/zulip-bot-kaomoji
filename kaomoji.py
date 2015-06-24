@@ -1,22 +1,21 @@
 # -*- coding: utf-8 -*-
+import json
 import os
 import re
-import zulip
-import json
-import requests
-import psycopg2
-import urlparse
 import textwrap
+import urlparse
+
+import psycopg2
+import requests
+import zulip
 
 
 class KaomojiBot():
-    ''' Recognised command:
-    '''
+    # Recognised command:
     command = '@kao'
     help = command + ' help'
 
-    ''' Available kaomojis:
-    '''
+    # Available kaomojis:
     kaomojis = {
         # Happy
         'yay': '＼(＾▽＾)／',
@@ -57,36 +56,33 @@ class KaomojiBot():
         'sing': '(￣▽￣)/♫•*¨*•.¸¸♪'
     }
 
-    ''' Private commands
-    '''
+    # Private commands
     remove_commands = ['delete',
                        'remove',
                        'exit',
                        'stop']
     kaos = json.dumps(kaomojis, indent=4, ensure_ascii=False)
     help_api = textwrap.dedent('''
-Set me up & manage your private API key:
-* Send me your API key so I can edit your comments and include \
-awesome kaomojis! (*^ω^)
-* Send me `info` to check if I have your API key or not. (^_~)
-* Send me one of the following commands to delete your information \
-from my database: `{0}` ┐(￣ヘ￣;)┌
-* Send me the text `help` to see this message. (⌒_⌒;)
+        Set me up & manage your private API key:
+        * Send me your API key so I can edit your comments and include \
+        awesome kaomojis! (*^ω^)
+        * Send me `info` to check if I have your API key or not. (^_~)
+        * Send me one of the following commands to delete your information \
+        from my database: `{0}` ┐(￣ヘ￣;)┌
+        * Send me the text `help` to see this message. (⌒_⌒;)
 
-Example usage on a stream: `{1} <keyword>`
-Available keywords & correspondent kaomojis:
-```
-{2}
-```'''.format('`, `'.join(remove_commands), command, kaos))
+        Example usage on a stream: `{1} <keyword>`
+        Available keywords & correspondent kaomojis:
+        ```
+        {2}
+        ```''').format('`, `'.join(remove_commands), command, kaos)
 
-    ''' Database-related information
-    '''
+    # Database-related information
     db_api_key_size = 32
     db_table_name = 'keys'
 
     def enum(**named_values):
-        ''' Enum to define bot’s messages.
-        '''
+        '''Enum to define bot’s messages.'''
         return type('Enum', (), named_values)
     Messages = enum(
         ADD_SUCCESS='red',
@@ -94,7 +90,7 @@ Available keywords & correspondent kaomojis:
         REMOVE_SUCCESS='Your API key was successfuly removed! ＼(≧▽≦)／',
         INFO_FOUND='''I have your data! Send me one of the following commands to remote it:
             `{0}` (◕‿◕)'''.format('`, `'.join(remove_commands)),
-        INFO_NOT_FOUND='I don’t have your data, so rest assure. (-‿‿-)',
+        INFO_NOT_FOUND='I don’t have your data, so rest assured. (-‿‿-)',
         IDK='I have no idea what you mean. ¯\_(ツ)_/¯')
 
     def __init__(self, zulip_usr, zulip_api, private_usr, private_api,
@@ -114,11 +110,9 @@ Available keywords & correspondent kaomojis:
         self.cur.close()
         self.conn.close()
 
-    '''
-    Standardizes a list of streams in the form [{'name': stream}]
-    '''
     @property
     def streams(self):
+        "Standardizes a list of streams in the form [{'name': stream}]"
         if not self.subscribed_streams:
             streams = [{'name': stream['name']} for stream
                        in self.get_all_zulip_streams()]
@@ -128,10 +122,8 @@ Available keywords & correspondent kaomojis:
                        in self.subscribed_streams]
             return streams
 
-    '''
-    Connect to database
-    '''
     def _connect(self, database_url):
+        "Connect to database"
         urlparse.uses_netloc.append("postgres")
         url = urlparse.urlparse(database_url)
 
@@ -146,10 +138,8 @@ Available keywords & correspondent kaomojis:
         except:
             print 'I am unable to connect to the database'
 
-    '''
-    Call Zulip API to get a list of all streams
-    '''
     def get_all_zulip_streams(self):
+        "Call Zulip API to get a list of all streams"
         response = requests.get(
             'https://api.zulip.com/v1/streams',
             auth=(self.username, self.api_key)
@@ -161,18 +151,14 @@ Available keywords & correspondent kaomojis:
         else:
             raise RuntimeError(':( we failed to GET streams.\n(%s)' % response)
 
-    '''
-    Subscribes to zulip streams
-    '''
     def subscribe_to_streams(self):
+        "Subscribes to zulip streams"
         self.client.add_subscriptions(self.streams)
 
-    '''
-    Respondes to messages sent to it
-    '''
     def respond(self, msg):
+        "Responds to messages sent to it"
         # Check if it’s a private message;
-        # If so, it’s probably someont sending us an e-mail address and API key
+        # If so, it’s probably someone sending us an e-mail address and API key
         if msg['type'] == 'private':
             self._handle_pm(msg)
             return
@@ -192,7 +178,7 @@ Available keywords & correspondent kaomojis:
         if index == -1 or len(content) <= index + 1:
             return
 
-        # Start buidling the new message and
+        # Start building the new message and
         # get the list of possible keywords (words after command).
         new_msg = content[0:index]
         content = content[index + 1:]
@@ -240,11 +226,11 @@ Available keywords & correspondent kaomojis:
     def _show_help(self, mail):
         self.send_private_message(mail, self.Messages.IDK)
 
-    '''
-    Stores a pair (key, value),
-    where the `key` is the user’s e-mail and `value` is the API key
-    '''
     def _user_store(self, address, api_key):
+        '''Stores a pair (key, value),
+
+        where the `key` is the user’s e-mail and `value` is the API key
+        '''
         self.db_insert(address, api_key)
         msg = 'Successfuly stored {0}'.format(api_key)
         self.send_private_message(address, msg)
@@ -266,33 +252,25 @@ Available keywords & correspondent kaomojis:
         msg = self.Messages.REMOVE_SUCCESS
         self.send_private_message(address, msg)
 
-    '''
-    Sends available commands
-    '''
     def send_help(self, msg):
+        '''Sends available commands'''
         to = msg['sender_email']
         self.send_private_message(to, self.help_api)
 
-    '''
-    Sends a message to zulip stream
-    '''
     def send_message(self, msg, new_msg):
+        '''Sends a message to zulip stream'''
         self.edit_message(msg, new_msg)
 
-    '''
-    Sends a private message
-    '''
     def send_private_message(self, to, msg):
+        '''Sends a private message'''
         self.client.send_message({
             "type": "private",
             "to": to,
             "content": msg
         })
 
-    '''
-    Replaces an old message with a new message.
-    '''
     def edit_message(self, old, new):
+        '''Replaces an old message with a new message.'''
         address = old['sender_email']
         credentials = self.db_search(address)
 
@@ -336,24 +314,22 @@ Available keywords & correspondent kaomojis:
         self.conn.commit()
         return result
 
-    '''
-    Blocking call that runs forever.
-    Calls self.respond() on every message received.
-    '''
     def main(self):
-        self.client.call_on_each_message(lambda msg: self.respond(msg))
+        ''' Blocking call that runs forever.
+
+        Calls self.respond() on every message received.
+        '''
+        self.client.call_on_each_message(self.respond)
 
 
-'''
-Zulip credentials:
-'''
-zulip_usr = os.environ['ZULIP_USR']
-zulip_api = os.environ['ZULIP_API']
-private_usr = os.environ['ZULIP_PRIVATE_USR']
-private_api = os.environ['ZULIP_PRIVATE_API']
-database_url = os.environ['DATABASE_URL']
+if __name__ == "__main__":
+    zulip_usr = os.environ['ZULIP_USR']
+    zulip_api = os.environ['ZULIP_API']
+    private_usr = os.environ['ZULIP_PRIVATE_USR']
+    private_api = os.environ['ZULIP_PRIVATE_API']
+    database_url = os.environ['DATABASE_URL']
 
-subscribed_streams = []
-new_bot = KaomojiBot(zulip_usr, zulip_api, private_usr, private_api,
-                     database_url)
-new_bot.main()
+    subscribed_streams = []
+    new_bot = KaomojiBot(zulip_usr, zulip_api, private_usr, private_api,
+                         database_url)
+    new_bot.main()
